@@ -59,7 +59,11 @@ public class PostgresQueryBuilder<T> {
         // Primary key info [0] will be the pk column name [1] will be the key itself
         Object[] pkInfo = getPrimaryKey(obj);
 
-        // Will be needed for login functions within switch
+        /*
+            Will be needed for login functions within switch
+            Email or Username column will be [0][0] and their values will be [0][1]
+            Password column will be [1][0] and the value will be [1][1]
+         */
         String[][] loginInfo;
 
         // The return value
@@ -85,7 +89,7 @@ public class PostgresQueryBuilder<T> {
 
             case "login_username":
 
-                loginInfo = getLoginInfo(obj);
+                loginInfo = getLoginInfoByUsername(obj);
 
                 query = buildLoginByUsername(tableName, loginInfo);
 
@@ -93,7 +97,7 @@ public class PostgresQueryBuilder<T> {
 
             case "login_email":
 
-                loginInfo = getLoginInfo(obj);
+                loginInfo = getLoginInfoByEmail(obj);
 
                 query = buildLoginByEmail(tableName, loginInfo);
 
@@ -312,9 +316,8 @@ public class PostgresQueryBuilder<T> {
         return returnArray;
 
     }
-
-    // TODO: Split this into getLoginInfoByUsername() and getLoginInfoEmail()
-    public String[][] getLoginInfo(Object obj) throws IllegalAccessException {
+    
+    public String[][] getLoginInfoByUsername(Object obj) throws IllegalAccessException {
 
         String[][] returnArray = new String[3][2];
 
@@ -358,7 +361,7 @@ public class PostgresQueryBuilder<T> {
                 }
 
                 // Check for the Username annotation
-                if (ano instanceof Email) {
+                if (ano instanceof Password) {
 
                     // Allow this script to grab the private fields
                     field.setAccessible(true);
@@ -372,6 +375,55 @@ public class PostgresQueryBuilder<T> {
                     ///...And add to the return array
                     returnArray[1][0] = field.getAnnotation(Column.class).name();
                     returnArray[1][1] = tempStrHolder;
+
+
+                    // Set the private field back to inaccessible
+                    field.setAccessible(false);
+                }
+            }
+        }
+
+        return returnArray;
+
+    }
+
+    public String[][] getLoginInfoByEmail(Object obj) throws IllegalAccessException {
+
+        String[][] returnArray = new String[3][2];
+
+        // Get the objects class
+        Class clazz = obj.getClass();
+
+        // POJO Class's fields
+        Field[] classFields = clazz.getDeclaredFields();
+
+        // Field level annotations
+        Annotation[] fieldAnno;
+
+        // Start looping through the class fields
+        for(Field field : classFields) {
+
+            // Grab the current fields annotations
+            fieldAnno = field.getAnnotations();
+
+            // Loop through the annotations in the previous step
+            for (Annotation ano : fieldAnno) {
+
+                // Check for the Username annotation
+                if (ano instanceof Email) {
+
+                    // Allow this script to grab the private fields
+                    field.setAccessible(true);
+
+                    // ...Isolate it...
+                    Object tempObjHolder = field.get(obj);
+
+                    // ...Surround it in single quotes...
+                    String tempStrHolder = "'" + tempObjHolder.toString() + "'";
+
+                    ///...And add to the return array
+                    returnArray[0][0] = field.getAnnotation(Column.class).name();
+                    returnArray[0][1] = tempStrHolder;
 
 
                     // Set the private field back to inaccessible
@@ -391,8 +443,8 @@ public class PostgresQueryBuilder<T> {
                     String tempStrHolder = "'" + tempObjHolder.toString() + "'";
 
                     ///...And add to the return array
-                    returnArray[2][0] = field.getAnnotation(Column.class).name();
-                    returnArray[2][1] = tempStrHolder;
+                    returnArray[1][0] = field.getAnnotation(Column.class).name();
+                    returnArray[1][1] = tempStrHolder;
 
 
                     // Set the private field back to inaccessible
@@ -489,25 +541,25 @@ public class PostgresQueryBuilder<T> {
 
     private String buildSelectAllByPK(String tableName, Object[] pkInfo) {
 
-        return "select * from " + tableName + " where " + pkInfo[0] + " = " + pkInfo[1].toString();
+        return "select * from " + tableName + " where " + pkInfo[0] + " = " + pkInfo[1].toString() + ";";
 
     }
 
     private String buildDeleteByPK(String tableName, Object[] pkInfo) {
 
-        return "delete from " + tableName + " where " + pkInfo[0] + " = " + pkInfo[1].toString();
+        return "delete from " + tableName + " where " + pkInfo[0] + " = " + pkInfo[1].toString() + ";";
 
     }
 
     private String buildLoginByUsername(String tableName, String[][] loginInfo) {
 
-        return "select " + loginInfo[0][0] + " from " + tableName + " where " + loginInfo[0][0] + " = " + loginInfo[0][1] + " and " + loginInfo[2][0] + " = " + loginInfo[2][1] + ";";
+        return "select " + loginInfo[0][0] + " from " + tableName + " where " + loginInfo[0][0] + " = " + loginInfo[0][1] + " and " + loginInfo[1][0] + " = " + loginInfo[1][1] + ";";
 
     }
 
     private String buildLoginByEmail(String tableName, String[][] loginInfo) {
 
-        return "select " + loginInfo[1][0] + " from " + tableName + " where " + loginInfo[1][0] + " = " + loginInfo[1][1] + " and " + loginInfo[2][0] + " = " + loginInfo[2][1] + ";";
+        return "select " + loginInfo[0][0] + " from " + tableName + " where " + loginInfo[0][0] + " = " + loginInfo[0][1] + " and " + loginInfo[1][0] + " = " + loginInfo[1][1] + ";";
 
     }
 }

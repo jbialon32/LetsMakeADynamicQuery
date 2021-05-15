@@ -17,7 +17,7 @@ public class Driver {
 
         final PostgresQueryBuilder qBuild = new PostgresQueryBuilder();
 
-        Person testPerson = new Person("Test", "Person", 25, "01-18-1996", "test_person", "test.person@test.org", "password");
+        Person testPerson = new Person(0, "Test", "Person", 25, "01-18-1996", "test_person", "test.person@test.org", "password");
 
         try {
 
