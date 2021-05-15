@@ -17,7 +17,7 @@ public class Driver {
 
         final PostgresQueryBuilder qBuild = new PostgresQueryBuilder();
 
-        Person testPerson = new Person("Test", "Person", 25, "01-18-1996");
+        Person testPerson = new Person("Test", "Person", 25, "01-18-1996", "test_person", "test.person@test.org", "password");
 
         try {
 
@@ -25,13 +25,19 @@ public class Driver {
             System.out.println(qBuild.buildQuery(testPerson, "insert"));
 
             // Select Test
-            System.out.println(qBuild.buildQuery(testPerson, "select"));
+            System.out.println(qBuild.buildQuery(testPerson, "select_all_pk"));
 
             // Delete Test
             System.out.println(qBuild.buildQuery(testPerson, "delete"));
 
             // Update Test
             System.out.println(qBuild.buildQuery(testPerson, "update"));
+
+            // Username Login Test
+            System.out.println(qBuild.buildQuery(testPerson, "login_username"));
+
+            // Email Login Test
+            System.out.println(qBuild.buildQuery(testPerson, "login_email"));
 
         } catch (Exception e) {
             System.out.println(e.getMessage());

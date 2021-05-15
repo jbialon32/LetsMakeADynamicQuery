@@ -31,11 +31,42 @@ public class Person {
     @Column(name = "birthday", data_type = "var_char")
     private String birthday;
 
-    public Person(String firstName, String lastName, int age, String birthday) {
+    @Username
+    @StringType
+    @Column(name = "username", data_type = "var_char")
+    private String username;
+
+    @Email
+    @StringType
+    @Column(name = "email", data_type = "var_char")
+    private String email;
+
+    @Password
+    @StringType
+    @Column(name = "password", data_type = "var_char")
+    private String password;
+
+    public Person(){}
+
+    public Person(int id, String firstName, String lastName, int age, String birthday, String username, String email, String password) {
+        this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.age = age;
         this.birthday = birthday;
+        this.username = username;
+        this.email = email;
+        this.password = password;
+    }
+
+    public Person(String firstName, String lastName, int age, String birthday, String username, String email, String password) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.age = age;
+        this.birthday = birthday;
+        this.username = username;
+        this.email = email;
+        this.password = password;
     }
 
     public int getId() {
@@ -76,5 +107,29 @@ public class Person {
 
     public void setBirthday(String birthday) {
         this.birthday = birthday;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }
