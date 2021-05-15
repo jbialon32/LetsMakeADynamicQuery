@@ -56,6 +56,9 @@ public class PostgresQueryBuilder<T> {
         // Get the queries values
         ArrayDeque<Object> queryValues = getValues(obj);
 
+        // Primary key info [0] will be the pk column name [1] will be the key itself
+        Object[] pkInfo = getPrimaryKey(obj);
+
         // The return value
         String query = "";
 
@@ -68,21 +71,17 @@ public class PostgresQueryBuilder<T> {
                 break;
 
             case "update":
-                // TODO: IMPLEMENT UPDATE QUERY BUILDER
-                query = "updoot";
+                query = buildUpdateQueryString(tableName, pkInfo, queryColumns, queryValues);
                 break;
 
             case "select":
-
-                Object[] pkInfo = getPrimaryKey(obj);
 
                 query = buildSelectAllByPK(tableName, pkInfo);
 
                 break;
 
             case "delete":
-                // TODO: IMPLEMENT DELETE QUERY BUILDER
-                query = "duuuuhleeet";
+                query = buildDeleteByPK(tableName, pkInfo);
                 break;
         }
 
@@ -349,9 +348,34 @@ public class PostgresQueryBuilder<T> {
 
     }
 
+    private String buildUpdateQueryString(String tableName, Object[] pkInfo, ArrayDeque<String> queryColumns, ArrayDeque<Object> queryValues) {
+
+        // Return value
+        String query = "update " + tableName + " set ";
+
+
+        // While we still have column data in our deque...
+        while (!queryColumns.isEmpty()) {
+
+            query = query + queryColumns.poll() + " = " + queryValues.poll().toString() + " ";
+
+        }
+
+        query = query + "where " + pkInfo[0] + " = " + pkInfo[1] + ";";
+
+        return query;
+
+    }
+
     private String buildSelectAllByPK(String tableName, Object[] pkInfo) {
 
         return "select * from " + tableName + " where " + pkInfo[0] + " = " + pkInfo[1].toString();
+
+    }
+
+    private String buildDeleteByPK(String tableName, Object[] pkInfo) {
+
+        return "delete from " + tableName + " where " + pkInfo[0] + " = " + pkInfo[1].toString();
 
     }
 }

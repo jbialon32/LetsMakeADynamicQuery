@@ -27,6 +27,12 @@ public class Driver {
             // Select Test
             System.out.println(qBuild.buildQuery(testPerson, "select"));
 
+            // Delete Test
+            System.out.println(qBuild.buildQuery(testPerson, "delete"));
+
+            // Update Test
+            System.out.println(qBuild.buildQuery(testPerson, "update"));
+
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
