@@ -76,23 +76,32 @@ public class PostgresQueryBuilder<T> {
             // Loop through the annotations in the previous step
             for (Annotation ano : fieldAnno) {
 
+                // Check for the Column annotation
                 if (ano instanceof Column) {
 
+                    // Allow this script to grab the private fields
                     field.setAccessible(true);
 
+                    // If the StringType annotation is present...
                     if (field.getAnnotation(StringType.class) != null) {
 
+                        // ...Isolate it...
                         Object tempObjHolder = field.get(obj);
+
+                        // ...Surround it in single quotes...
                         String tempStrHolder = "'" + tempObjHolder.toString() + "'";
 
+                        ///...And add to the ArrayDeque
                         fieldHolder.add(tempStrHolder);
 
                     } else {
 
+                        //...Otherwise just add it to the ArrayDeque as is
                         fieldHolder.add(field.get(obj));
 
                     }
 
+                    // Set the private field back to inaccessible
                     field.setAccessible(false);
 
                     Column column = (Column) field.getAnnotation(ano.annotationType());
