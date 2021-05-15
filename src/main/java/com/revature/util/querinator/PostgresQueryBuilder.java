@@ -6,8 +6,6 @@ import com.revature.util.annotation.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,6 +35,7 @@ public class PostgresQueryBuilder<T> {
 
     synchronized public String buildQuery(T obj, String queryType) throws IllegalAccessException, InvalidInput, AnnotationNotFound {
 
+        // TODO: Maybe turn this into an ENUM?
         // Set of valid queryType entries
         Set<String> validQueryTypes = Stream.of("insert", "update", "select_all_pk", "login_username", "login_email", "delete")
                                             .collect(Collectors.toCollection(HashSet::new));
@@ -316,7 +315,7 @@ public class PostgresQueryBuilder<T> {
         return returnArray;
 
     }
-    
+
     public String[][] getLoginInfoByUsername(Object obj) throws IllegalAccessException {
 
         String[][] returnArray = new String[3][2];
