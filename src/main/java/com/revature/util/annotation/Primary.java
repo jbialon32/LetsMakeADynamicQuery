@@ -13,5 +13,7 @@ import java.lang.annotation.*;
 @Documented
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Id {
+public @interface Primary {
+    String name() default "";
+    String data_type() default "serial";
 }

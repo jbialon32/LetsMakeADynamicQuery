@@ -13,8 +13,7 @@ import com.revature.util.annotation.*;
 @Table(table_name = "person")
 public class Person {
 
-    @Id
-    @Column(name = "person_id", data_type = "serial")
+    @Primary(name = "person_id")
     private int id;
 
     @Column(name = "first_name", data_type = "var_char")

@@ -92,10 +92,10 @@ public class PostgresQueryBuilder<T> {
             // Grab the current fields annotations
             fieldAnno = field.getAnnotations();
 
+
             // Loop through the annotations in the previous step
             for (Annotation ano : fieldAnno) {
 
-                // Check if it's a column annotation
                 if (ano instanceof Column) {
 
                     Column column = (Column) field.getAnnotation(ano.annotationType());
