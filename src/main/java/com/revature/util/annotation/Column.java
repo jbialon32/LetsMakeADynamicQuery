@@ -4,10 +4,10 @@ import java.lang.annotation.*;
 
 /**
  * Created by IntelliJ IDEA.
- * User: Jbialon
+ * User: James Bialon
  * Date: 5/14/2021
  * Time: 5:15 PM
- * Description: {Insert Description}
+ * Description: Annotation letting the compiler know this field will go to a database column
  */
 
 @Documented

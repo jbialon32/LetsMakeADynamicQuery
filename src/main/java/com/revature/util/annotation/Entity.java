@@ -7,7 +7,7 @@ import java.lang.annotation.*;
  * User: Jbialon
  * Date: 5/14/2021
  * Time: 5:07 PM
- * Description: {Insert Description}
+ * Description: Annotation letting the compiler know this object is an entity worth persisting
  */
 
 @Documented

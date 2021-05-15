@@ -1,5 +1,7 @@
 package com.revature.util.querinator;
 
+import com.revature.exceptions.AnnotationNotFound;
+import com.revature.exceptions.InvalidInput;
 import com.revature.util.annotation.*;
 
 import java.lang.annotation.Annotation;
@@ -7,48 +9,98 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by IntelliJ IDEA.
- * User: Jbialon
+ * User: James Bialon
  * Date: 5/14/2021
  * Time: 5:33 PM
- * Description: {Insert Description}
+ * Description: Dynamically build queries to interact with a postgres database
  */
 public class PostgresQueryBuilder<T> {
 
     public PostgresQueryBuilder(){};
 
-    synchronized public String buildQuery(T obj) throws InvocationTargetException, IllegalAccessException {
+    /**
+     *
+     * Description: Wraps everything nicely into a switch for multiple query types.
+     *
+     * @param obj
+     * @param queryType
+     * @return query
+     * @throws IllegalAccessException
+     * @throws InvalidInput
+     * @throws AnnotationNotFound
+     */
 
-        Class<?> clazz = obj.getClass();
+    synchronized public String buildQuery(T obj, String queryType) throws IllegalAccessException, InvalidInput, AnnotationNotFound {
 
-        // Return string
-        String query;
+        // Set of valid queryType entries
+        Set<String> validQueryTypes = Stream.of("insert", "update", "select", "delete")
+                                            .collect(Collectors.toCollection(HashSet::new));
+
+        // Ensures a good entry for query type
+        if (!validQueryTypes.contains(queryType)) { throw new InvalidInput("Bad query type value!"); }
+
+        // Ensures the pojo is supposed to be persisted to a table
+        if (!obj.getClass().isAnnotationPresent(Entity.class)) { throw new AnnotationNotFound("Entity annotation not found!!"); }
+
+        String query = "";
+
+        switch (queryType) {
+
+            case "insert":
+                // Holds the table name related to our POJO
+                String tableName = getTableName(obj);
+
+                // Get the queries column names
+                ArrayDeque<String> queryColumns = getColumnNames(obj);
+
+                // Get the queries values
+                ArrayDeque<Object> queryValues = getValues(obj);
+
+                // We have our dynamic/generic query :)
+                query = buildInsertQueryString(tableName, queryColumns, queryValues);
+                break;
+
+            case "update":
+                // TODO: IMPLEMENT UPDATE QUERY BUILDER
+                query = "updoot";
+                break;
+
+            case "select":
+                // TODO: IMPLEMENT SELECT QUERY BUILDER
+                query = "sawlect";
+                break;
+
+            case "delete":
+                // TODO: IMPLEMENT DELETE QUERY BUILDER
+                query = "duuuuhleeet";
+                break;
+        }
+
+        return query;
+
+    }
+
+    /**
+     *
+     * @param obj
+     * @return tableName
+     *
+     */
+    private String getTableName(Object obj) {
+
+        // Get the objects class
+        Class clazz = obj.getClass();
+
+        // Return value
+        String tableName = "";
 
         // POJO Class level annotations
         Annotation[] classAnnotations = clazz.getAnnotations();
-
-        // TODO: Add a check for entity annotation and throw exception if no present.
-
-        // POJO Class's fields
-        Field[] classFields = clazz.getDeclaredFields();
-
-        // This will hold out values part of the query
-        ArrayDeque fieldHolder = new ArrayDeque();
-
-        // Field level annotations
-        Annotation[] fieldAnno;
-
-        // Holds the table name related to our POJO
-        String tableName = "";
-
-        // Holds POJO's related column names
-        ArrayDeque<String> queryColumns = new ArrayDeque<String>();
-
-        // These will come in handy when populating the column deque
-        String lastQueryColumn;
-        Object lastValueValue;
 
         // Loop through our class level annotations
         for(Annotation ano : classAnnotations) {
@@ -64,8 +116,72 @@ public class PostgresQueryBuilder<T> {
 
         }
 
-        // Let's start building our query with the info currently available to us
-        query = "insert into " + tableName + "(";
+        return tableName;
+    }
+
+    /**
+     *
+     * @param obj
+     * @return ArrayDeque of column names
+     */
+    private ArrayDeque<String> getColumnNames(Object obj) {
+
+        // Get the objects class
+        Class clazz = obj.getClass();
+
+        // POJO Class's fields
+        Field[] classFields = clazz.getDeclaredFields();
+
+        // Return value
+        ArrayDeque<String> queryColumns = new ArrayDeque<>();
+
+        // Field level annotations
+        Annotation[] fieldAnno;
+
+        // Start looping through the class fields
+        for(Field field : classFields) {
+
+            // Grab the current fields annotations
+            fieldAnno = field.getAnnotations();
+
+            // Loop through the annotations in the previous step
+            for (Annotation ano : fieldAnno) {
+
+                // Check for the Column annotation
+                if (ano instanceof Column) {
+
+                    Column column = (Column) field.getAnnotation(ano.annotationType());
+
+                    // If so add the column name to our column deque
+                    queryColumns.add(column.name());
+
+                }
+            }
+        }
+
+        return queryColumns;
+
+    }
+
+    /**
+     *
+     * @param obj
+     * @return ArrayDeque of mixed type values
+     * @throws IllegalAccessException
+     */
+    private ArrayDeque<Object> getValues(Object obj) throws IllegalAccessException {
+
+        // Get the objects class
+        Class clazz = obj.getClass();
+
+        // POJO Class's fields
+        Field[] classFields = clazz.getDeclaredFields();
+
+        // This will hold out values part of the query
+        ArrayDeque fieldHolder = new ArrayDeque();
+
+        // Field level annotations
+        Annotation[] fieldAnno;
 
         // Start looping through the class fields
         for(Field field : classFields) {
@@ -83,7 +199,7 @@ public class PostgresQueryBuilder<T> {
                     field.setAccessible(true);
 
                     // If the StringType annotation is present...
-                    if (field.getAnnotation(StringType.class) != null) {
+                    if (field.isAnnotationPresent(StringType.class)) {
 
                         // ...Isolate it...
                         Object tempObjHolder = field.get(obj);
@@ -103,21 +219,29 @@ public class PostgresQueryBuilder<T> {
 
                     // Set the private field back to inaccessible
                     field.setAccessible(false);
-
-                    Column column = (Column) field.getAnnotation(ano.annotationType());
-
-                    // If so add the column name to our column deque
-                    queryColumns.add(column.name());
-
                 }
             }
         }
 
-        // Set a quick reference for comaprison later
-        lastValueValue = fieldHolder.peekLast();
+        return fieldHolder;
 
-        // Best keep track of that last entry now
-        lastQueryColumn = queryColumns.peekLast();
+    }
+
+    /**
+     *
+     * @param tableName
+     * @param queryColumns
+     * @param queryValues
+     * @return Insert query
+     */
+    private String buildInsertQueryString(String tableName, ArrayDeque<String> queryColumns, ArrayDeque<Object> queryValues) {
+
+        // Return value
+        String query = "insert into " + tableName + "(";
+
+        // These will come in handy when populating the query with our Dequeues
+        String lastQueryColumn = queryColumns.peekLast();
+        Object lastValueValue = queryValues.peekLast();
 
         // While we still have column data in our deque...
         while (!queryColumns.isEmpty()) {
@@ -131,29 +255,29 @@ public class PostgresQueryBuilder<T> {
             } else {
 
                 // If it is the last item add it to the query but close it off and start the values portion of our query
-                query = query + queryColumns.poll() + ") values (";
+                query = query + queryColumns.poll() + ") values(";
             }
 
         }
 
         // While our arrayDeque of values is not empty...
-        while (!fieldHolder.isEmpty()) {
+        while (!queryValues.isEmpty()) {
 
             // Check if it's the last value to get
-            if (!fieldHolder.peek().equals(lastValueValue)) {
+            if (!queryValues.peek().equals(lastValueValue)) {
 
                 // ...If it isn't present just toss it in with toString and end with a comma for the next value
-                query = query + fieldHolder.poll().toString() + ", ";
+                query = query + queryValues.poll().toString() + ", ";
 
             } else {
 
                 // ...If it is just toss it in with toString and end with a ); to finish the query
-                query = query + fieldHolder.poll().toString() + ");";
+                query = query + queryValues.poll().toString() + ");";
 
             }
         }
 
-        // We have our dynamic/generic query :)
         return query;
+
     }
 }

@@ -5,22 +5,24 @@ import com.revature.util.querinator.PostgresQueryBuilder;
 
 /**
  * Created by IntelliJ IDEA.
- * User: Jbialon
+ * User: James Bialon
  * Date: 5/14/2021
  * Time: 5:21 PM
- * Description: {Insert Description}
+ * Description: The main method to kick everything off.
  */
+
 public class Driver {
 
     public static void main(String[] args) {
 
-        PostgresQueryBuilder qBuild = new PostgresQueryBuilder();
+        final PostgresQueryBuilder qBuild = new PostgresQueryBuilder();
+
         Person testPerson = new Person("Test", "Person", 25, "01-18-1996");
 
         try {
-            System.out.println(qBuild.buildQuery(testPerson));
+            System.out.println(qBuild.buildQuery(testPerson, "insert"));
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
 
     }

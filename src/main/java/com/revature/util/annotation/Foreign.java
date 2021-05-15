@@ -4,10 +4,10 @@ import java.lang.annotation.*;
 
 /**
  * Created by IntelliJ IDEA.
- * User: Jbialon
+ * User: James Bialon
  * Date: 5/15/2021
  * Time: 9:09 AM
- * Description: {Insert Description}
+ * Description: Annotation letting the compiler know this field will go to a database column as a foreign key
  */
 
 

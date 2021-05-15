@@ -4,10 +4,10 @@ import com.revature.util.annotation.*;
 
 /**
  * Created by IntelliJ IDEA.
- * User: Jbialon
+ * User: James Bialon
  * Date: 5/14/2021
  * Time: 5:21 PM
- * Description: {Insert Description}
+ * Description: Person object for proof of concept.
  */
 @Entity
 @Table(table_name = "person")
