@@ -20,7 +20,13 @@ public class Driver {
         Person testPerson = new Person("Test", "Person", 25, "01-18-1996");
 
         try {
+
+            // Insert Test
             System.out.println(qBuild.buildQuery(testPerson, "insert"));
+
+            // Select Test
+            System.out.println(qBuild.buildQuery(testPerson, "select"));
+
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }

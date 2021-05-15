@@ -47,19 +47,21 @@ public class PostgresQueryBuilder<T> {
         // Ensures the pojo is supposed to be persisted to a table
         if (!obj.getClass().isAnnotationPresent(Entity.class)) { throw new AnnotationNotFound("Entity annotation not found!!"); }
 
+        // Holds the table name related to our POJO
+        String tableName = getTableName(obj);
+
+        // Get the queries column names
+        ArrayDeque<String> queryColumns = getColumnNames(obj);
+
+        // Get the queries values
+        ArrayDeque<Object> queryValues = getValues(obj);
+
+        // The return value
         String query = "";
 
         switch (queryType) {
 
             case "insert":
-                // Holds the table name related to our POJO
-                String tableName = getTableName(obj);
-
-                // Get the queries column names
-                ArrayDeque<String> queryColumns = getColumnNames(obj);
-
-                // Get the queries values
-                ArrayDeque<Object> queryValues = getValues(obj);
 
                 // We have our dynamic/generic query :)
                 query = buildInsertQueryString(tableName, queryColumns, queryValues);
@@ -71,8 +73,11 @@ public class PostgresQueryBuilder<T> {
                 break;
 
             case "select":
-                // TODO: IMPLEMENT SELECT QUERY BUILDER
-                query = "sawlect";
+
+                Object[] pkInfo = getPrimaryKey(obj);
+
+                query = buildSelectAllByPK(tableName, pkInfo);
+
                 break;
 
             case "delete":
@@ -229,6 +234,69 @@ public class PostgresQueryBuilder<T> {
 
     /**
      *
+     * @param obj
+     * @return int (primary key)
+     * @throws IllegalAccessException
+     */
+    private Object[] getPrimaryKey(Object obj) throws IllegalAccessException, InvalidInput {
+
+        // Get the objects class
+        Class clazz = obj.getClass();
+
+        // POJO Class's fields
+        Field[] classFields = clazz.getDeclaredFields();
+
+        // Annotation holder
+        Annotation[] fieldAnno;
+
+        // Return values
+        int primaryKey = -1;
+        String primaryColumnName = "";
+        Object[] returnArray = new Object[2];
+
+        for (Field field : classFields) {
+
+            // Grab the current fields annotations
+            fieldAnno = field.getAnnotations();
+
+            // Loop through the annotations in the previous step
+            for (Annotation ano : fieldAnno) {
+
+                // Check for the Column annotation
+                if (ano instanceof Primary) {
+
+                    Primary pkAnno = (Primary) field.getAnnotation(ano.annotationType());
+
+                    primaryColumnName = pkAnno.name();
+
+                    // Allow this script to grab the private fields
+                    field.setAccessible(true);
+
+                    if (field.get(obj) != null) {
+
+                        primaryKey = (int) field.get(obj);
+
+                    } else { throw new InvalidInput("Primary key cannot be null!"); }
+
+                    // Stop others from grabbing the private field
+                    field.setAccessible(false);
+
+                }
+            }
+        }
+
+        if (primaryKey == -1) { throw new InvalidInput("Primary key is non-existent!"); }
+
+        returnArray[0] = primaryColumnName;
+        returnArray[1] = primaryKey;
+
+
+        return returnArray;
+
+    }
+
+    /**
+     *
      * @param tableName
      * @param queryColumns
      * @param queryValues
@@ -278,6 +346,12 @@ public class PostgresQueryBuilder<T> {
         }
 
         return query;
+
+    }
+
+    private String buildSelectAllByPK(String tableName, Object[] pkInfo) {
+
+        return "select * from " + tableName + " where " + pkInfo[0] + " = " + pkInfo[1].toString();
 
     }
 }
