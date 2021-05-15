@@ -19,7 +19,7 @@ public class PostgresQueryBuilder<T> {
 
     public PostgresQueryBuilder(){};
 
-    public String buildQuery(T obj) throws InvocationTargetException, IllegalAccessException {
+    synchronized public String buildQuery(T obj) throws InvocationTargetException, IllegalAccessException {
 
         Class<?> clazz = obj.getClass();
 
@@ -29,45 +29,26 @@ public class PostgresQueryBuilder<T> {
         // POJO Class level annotations
         Annotation[] classAnnotations = clazz.getAnnotations();
 
+        // TODO: Add a check for entity annotation and throw exception if no present.
+
         // POJO Class's fields
         Field[] classFields = clazz.getDeclaredFields();
+
+        // This will hold out values part of the query
+        ArrayDeque fieldHolder = new ArrayDeque();
 
         // Field level annotations
         Annotation[] fieldAnno;
 
-        // T's methods
-        Method[] classMethods = clazz.getDeclaredMethods();
-
-        // Array deque that holds getter methods
-        ArrayDeque<Method> objGetters = new ArrayDeque<Method>();
-
-        // Populate getter deque
-        for (Method method : classMethods) {
-
-            /*
-                Checks if the method has the the Getter annotation
-                but also ensures it doesn't have the IdGetter annotation
-             */
-
-            if (method.getAnnotation(Getter.class) != null
-                    && method.getAnnotation(IdGetter.class) == null) {
-                objGetters.add(method);
-            }
-        }
-
-        // Will be used to invoke getters later
-        Method getter;
-
         // Holds the table name related to our POJO
         String tableName = "";
-
 
         // Holds POJO's related column names
         ArrayDeque<String> queryColumns = new ArrayDeque<String>();
 
         // These will come in handy when populating the column deque
         String lastQueryColumn;
-        Method lastGetterMethod = objGetters.peekLast();
+        Object lastValueValue;
 
         // Loop through our class level annotations
         for(Annotation ano : classAnnotations) {
@@ -92,11 +73,27 @@ public class PostgresQueryBuilder<T> {
             // Grab the current fields annotations
             fieldAnno = field.getAnnotations();
 
-
             // Loop through the annotations in the previous step
             for (Annotation ano : fieldAnno) {
 
                 if (ano instanceof Column) {
+
+                    field.setAccessible(true);
+
+                    if (field.getAnnotation(StringType.class) != null) {
+
+                        Object tempObjHolder = field.get(obj);
+                        String tempStrHolder = "'" + tempObjHolder.toString() + "'";
+
+                        fieldHolder.add(tempStrHolder);
+
+                    } else {
+
+                        fieldHolder.add(field.get(obj));
+
+                    }
+
+                    field.setAccessible(false);
 
                     Column column = (Column) field.getAnnotation(ano.annotationType());
 
@@ -106,6 +103,9 @@ public class PostgresQueryBuilder<T> {
                 }
             }
         }
+
+        // Set a quick reference for comaprison later
+        lastValueValue = fieldHolder.peekLast();
 
         // Best keep track of that last entry now
         lastQueryColumn = queryColumns.peekLast();
@@ -127,48 +127,21 @@ public class PostgresQueryBuilder<T> {
 
         }
 
-        // While the getter methods are still in our getter deque
-        while (!objGetters.isEmpty()) {
+        // While our arrayDeque of values is not empty...
+        while (!fieldHolder.isEmpty()) {
 
-            // Check if it's the last getter method to call
-            if (!objGetters.peek().equals(lastGetterMethod)) {
+            // Check if it's the last value to get
+            if (!fieldHolder.peek().equals(lastValueValue)) {
 
-                // Set the head as the current method
-                getter = objGetters.poll();
-
-                // If the StringType annotation is present...
-                if (getter.getAnnotation(StringType.class) != null) {
-
-                    // ...wrap it up in single quotes and end with a comma for the next value
-                    query = query + "'" + getter.invoke(obj, null) + "', ";
-
-                } else {
-
-                    // If it isn't present just toss it in with toString and end with a comma for the next value
-                    query = query + getter.invoke(obj, null).toString() + ", ";
-
-                }
+                // ...If it isn't present just toss it in with toString and end with a comma for the next value
+                query = query + fieldHolder.poll().toString() + ", ";
 
             } else {
 
-                // Grab the last getter method
-                getter = objGetters.poll();
-
-                // If the StringType annotation is present...
-                if (getter.getAnnotation(StringType.class) != null) {
-
-                    // ...wrap it up in single quotes and finish our query with );
-                    query = query + "'" + getter.invoke(obj, null) + "');";
-
-                } else {
-
-                    // Otherwise toString it and finish our query with );
-                    query = query + getter.invoke(obj, null).toString() + ");";
-
-                }
+                // ...If it is just toss it in with toString and end with a ); to finish the query
+                query = query + fieldHolder.poll().toString() + ");";
 
             }
-
         }
 
         // We have our dynamic/generic query :)

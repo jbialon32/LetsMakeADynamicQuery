@@ -11,7 +11,7 @@ import java.lang.annotation.*;
  */
 
 @Documented
-@Target(ElementType.METHOD)
+@Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface StringType {
 }

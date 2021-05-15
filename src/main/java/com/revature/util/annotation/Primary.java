@@ -15,5 +15,4 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Primary {
     String name() default "";
-    String data_type() default "serial";
 }

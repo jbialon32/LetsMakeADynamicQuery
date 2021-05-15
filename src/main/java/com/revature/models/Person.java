@@ -16,15 +16,18 @@ public class Person {
     @Primary(name = "person_id")
     private int id;
 
+    @StringType
     @Column(name = "first_name", data_type = "var_char")
     private String firstName;
 
+    @StringType
     @Column(name = "last_name", data_type = "var_char")
     private String lastName;
 
     @Column(name = "age", data_type = "smallint")
     private int age;
 
+    @StringType
     @Column(name = "birthday", data_type = "var_char")
     private String birthday;
 
@@ -35,8 +38,6 @@ public class Person {
         this.birthday = birthday;
     }
 
-    @Getter
-    @IdGetter
     public int getId() {
         return id;
     }
@@ -45,8 +46,6 @@ public class Person {
         this.id = id;
     }
 
-    @StringType
-    @Getter
     public String getFirstName() {
         return firstName;
     }
@@ -55,8 +54,6 @@ public class Person {
         this.firstName = firstName;
     }
 
-    @StringType
-    @Getter
     public String getLastName() {
         return lastName;
     }
@@ -65,7 +62,6 @@ public class Person {
         this.lastName = lastName;
     }
 
-    @Getter
     public int getAge() {
         return age;
     }
@@ -74,8 +70,6 @@ public class Person {
         this.age = age;
     }
 
-    @StringType
-    @Getter
     public String getBirthday() {
         return birthday;
     }

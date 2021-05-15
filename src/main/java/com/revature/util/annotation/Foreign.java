@@ -5,13 +5,15 @@ import java.lang.annotation.*;
 /**
  * Created by IntelliJ IDEA.
  * User: Jbialon
- * Date: 5/14/2021
- * Time: 7:59 PM
+ * Date: 5/15/2021
+ * Time: 9:09 AM
  * Description: {Insert Description}
  */
 
+
 @Documented
-@Target(ElementType.METHOD)
+@Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Getter {
+public @interface Foreign {
+    String name() default "";
 }
