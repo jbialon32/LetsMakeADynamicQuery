@@ -45,7 +45,7 @@ public class PostgresQueryBuilder<T> {
 
         // TODO: Maybe turn this into an ENUM?
         // Set of valid queryType entries
-        Set<String> validQueryTypes = Stream.of("insert", "update", "select_all_pk", "login_username", "login_email", "delete")
+        Set<String> validQueryTypes = Stream.of("insert", "update", "select_by_pk", "login_username", "login_email", "delete")
                                             .collect(Collectors.toCollection(HashSet::new));
 
         // Ensures a good entry for query type
@@ -101,7 +101,7 @@ public class PostgresQueryBuilder<T> {
 
 
 
-            case "select_all_pk":
+            case "select_by_pk":
 
                 readGenerator = new ReadBasedQueries(conn);
 

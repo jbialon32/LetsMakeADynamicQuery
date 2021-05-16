@@ -26,7 +26,7 @@ public class Driver {
             System.out.println(qBuild.buildQuery(testPerson, "insert"));
 
             // Select Test
-            System.out.println(qBuild.buildQuery(testPerson, "select_all_pk"));
+            System.out.println(qBuild.buildQuery(testPerson, "select_by_pk"));
 
             // Delete Test
             System.out.println(qBuild.buildQuery(testPerson, "delete"));
