@@ -16,33 +16,27 @@ public class Person {
     @Primary(name = "person_id")
     private int id;
 
-    @StringType
     @Column(name = "first_name", data_type = "var_char")
     private String firstName;
 
-    @StringType
     @Column(name = "last_name", data_type = "var_char")
     private String lastName;
 
     @Column(name = "age", data_type = "smallint")
     private int age;
 
-    @StringType
     @Column(name = "birthday", data_type = "var_char")
     private String birthday;
 
     @Username
-    @StringType
     @Column(name = "username", data_type = "var_char")
     private String username;
 
     @Email
-    @StringType
     @Column(name = "email", data_type = "var_char")
     private String email;
 
     @Password
-    @StringType
     @Column(name = "password", data_type = "var_char")
     private String password;
 
