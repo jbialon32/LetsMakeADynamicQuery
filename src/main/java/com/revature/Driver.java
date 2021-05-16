@@ -1,6 +1,7 @@
 package com.revature;
 
 import com.revature.models.Person;
+import com.revature.util.factory.ConnectionFactory;
 import com.revature.util.querinator.PostgresQueryBuilder;
 
 /**
@@ -15,7 +16,7 @@ public class Driver {
 
     public static void main(String[] args) {
 
-        final PostgresQueryBuilder qBuild = new PostgresQueryBuilder();
+        final PostgresQueryBuilder qBuild = new PostgresQueryBuilder(ConnectionFactory.getInstance().getConnection());
 
         Person testPerson = new Person(0, "Test", "Person", 25, "01-18-1996", "test_person", "test.person@test.org", "password");
 
@@ -44,5 +45,6 @@ public class Driver {
         }
 
     }
+
 
 }

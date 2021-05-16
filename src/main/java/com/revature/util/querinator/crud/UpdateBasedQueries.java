@@ -1,5 +1,10 @@
 package com.revature.util.querinator.crud;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayDeque;
+
 /**
  * Created by IntelliJ IDEA.
  * User: Jbialon
@@ -8,4 +13,53 @@ package com.revature.util.querinator.crud;
  * Description: {Insert Description}
  */
 public class UpdateBasedQueries {
+
+    Connection conn;
+
+    public UpdateBasedQueries(Connection conn){ this.conn = conn; }
+
+    public boolean buildUpdateQueryString(String tableName, Object[] pkInfo, ArrayDeque<String> queryColumns, ArrayDeque<Object> queryValues) throws SQLException {
+
+        int paramCounter = 1;
+
+        // Return value
+        String query = "update " + tableName + " set ";
+
+        Object lastValueValue = queryValues.peekLast();
+
+        // While we still have column data in our deque...
+        while (!queryColumns.isEmpty()) {
+
+            if (!queryValues.peek().equals(lastValueValue)) {
+
+                query = query + queryColumns.poll() + " = ?, ";
+
+            } else {
+
+                query = query + queryColumns.poll() + " = ? ";
+
+            }
+
+        }
+
+        query = query + "where " + pkInfo[0] + " = ?;";
+
+        PreparedStatement pstmt = conn.prepareStatement(query);
+
+        for (Object value : queryValues) {
+
+            pstmt.setObject(paramCounter, queryValues.poll());
+
+            paramCounter++;
+
+        }
+
+        System.out.println(pstmt);
+
+        // TODO: Actually fire it to the db
+
+        return true;
+
+    }
+
 }

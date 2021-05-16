@@ -3,9 +3,15 @@ package com.revature.util.querinator;
 import com.revature.exceptions.AnnotationNotFound;
 import com.revature.exceptions.InvalidInput;
 import com.revature.util.annotation.*;
+import com.revature.util.querinator.crud.CreateBasedQueries;
+import com.revature.util.querinator.crud.DeleteBasedQueries;
+import com.revature.util.querinator.crud.ReadBasedQueries;
+import com.revature.util.querinator.crud.UpdateBasedQueries;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,7 +25,9 @@ import java.util.stream.Stream;
  */
 public class PostgresQueryBuilder<T> {
 
-    public PostgresQueryBuilder(){};
+    Connection conn;
+
+    public PostgresQueryBuilder(Connection conn){ this.conn = conn; };
 
     /**
      *
@@ -33,7 +41,7 @@ public class PostgresQueryBuilder<T> {
      * @throws AnnotationNotFound
      */
 
-    synchronized public String buildQuery(T obj, String queryType) throws IllegalAccessException, InvalidInput, AnnotationNotFound {
+    public boolean buildQuery(T obj, String queryType) throws IllegalAccessException, InvalidInput, AnnotationNotFound, SQLException {
 
         // TODO: Maybe turn this into an ENUM?
         // Set of valid queryType entries
@@ -63,48 +71,73 @@ public class PostgresQueryBuilder<T> {
             Email or Username column will be [0][0] and their values will be [0][1]
             Password column will be [1][0] and the value will be [1][1]
          */
-        String[][] loginInfo;
+        Object[][] loginInfo;
+
+        // Query Builders
+        CreateBasedQueries createGenerator;
+        ReadBasedQueries readGenerator;
+        UpdateBasedQueries updateGenerator;
+        DeleteBasedQueries deleteGenerator;
 
         // The return value
-        String query = "";
+        boolean query = false;
 
         switch (queryType) {
 
             case "insert":
 
+                createGenerator = new CreateBasedQueries(conn);
+
                 // We have our dynamic/generic query :)
-                query = buildInsertQueryString(tableName, queryColumns, queryValues);
+                query = createGenerator.buildInsertQueryString(tableName, queryColumns, queryValues);
                 break;
 
             case "update":
-                query = buildUpdateQueryString(tableName, pkInfo, queryColumns, queryValues);
+
+                updateGenerator = new UpdateBasedQueries(conn);
+
+                query = updateGenerator.buildUpdateQueryString(tableName, pkInfo, queryColumns, queryValues);
                 break;
+
+
 
             case "select_all_pk":
 
-                query = buildSelectAllByPK(tableName, pkInfo);
+                readGenerator = new ReadBasedQueries(conn);
+
+                query = readGenerator.buildSelectAllByPK(tableName, pkInfo);
 
                 break;
 
+
             case "login_username":
+
+                readGenerator = new ReadBasedQueries(conn);
 
                 loginInfo = getLoginInfoByUsername(obj);
 
-                query = buildLoginByUsername(tableName, loginInfo);
+                query = readGenerator.buildLoginByUsername(tableName, loginInfo);
 
                 break;
 
             case "login_email":
 
+                readGenerator = new ReadBasedQueries(conn);
+
                 loginInfo = getLoginInfoByEmail(obj);
 
-                query = buildLoginByEmail(tableName, loginInfo);
+                query = readGenerator.buildLoginByEmail(tableName, loginInfo);
 
                 break;
 
             case "delete":
-                query = buildDeleteByPK(tableName, pkInfo);
+
+                deleteGenerator = new DeleteBasedQueries(conn);
+
+                query = deleteGenerator.buildDeleteByPK(tableName, pkInfo);
+
                 break;
+
         }
 
         return query;
@@ -224,24 +257,8 @@ public class PostgresQueryBuilder<T> {
                     // Allow this script to grab the private fields
                     field.setAccessible(true);
 
-                    // If the StringType annotation is present...
-                    if (field.isAnnotationPresent(StringType.class)) {
-
-                        // ...Isolate it...
-                        Object tempObjHolder = field.get(obj);
-
-                        // ...Surround it in single quotes...
-                        String tempStrHolder = "'" + tempObjHolder.toString() + "'";
-
-                        ///...And add to the ArrayDeque
-                        fieldHolder.add(tempStrHolder);
-
-                    } else {
-
-                        //...Otherwise just add it to the ArrayDeque as is
-                        fieldHolder.add(field.get(obj));
-
-                    }
+                    //...Otherwise just add it to the ArrayDeque as is
+                    fieldHolder.add(field.get(obj));
 
                     // Set the private field back to inaccessible
                     field.setAccessible(false);
@@ -316,9 +333,9 @@ public class PostgresQueryBuilder<T> {
 
     }
 
-    public String[][] getLoginInfoByUsername(Object obj) throws IllegalAccessException {
+    public Object[][] getLoginInfoByUsername(Object obj) throws IllegalAccessException {
 
-        String[][] returnArray = new String[3][2];
+        Object[][] returnArray = new String[3][2];
 
         // Get the objects class
         Class clazz = obj.getClass();
@@ -344,15 +361,10 @@ public class PostgresQueryBuilder<T> {
                     // Allow this script to grab the private fields
                     field.setAccessible(true);
 
-                    // ...Isolate it...
-                    Object tempObjHolder = field.get(obj);
-
-                    // ...Surround it in single quotes...
-                    String tempStrHolder = "'" + tempObjHolder.toString() + "'";
 
                     ///...And add to the return array
                     returnArray[0][0] = field.getAnnotation(Column.class).name();
-                    returnArray[0][1] = tempStrHolder;
+                    returnArray[0][1] = field.get(obj);
 
 
                     // Set the private field back to inaccessible
@@ -365,15 +377,10 @@ public class PostgresQueryBuilder<T> {
                     // Allow this script to grab the private fields
                     field.setAccessible(true);
 
-                    // ...Isolate it...
-                    Object tempObjHolder = field.get(obj);
 
-                    // ...Surround it in single quotes...
-                    String tempStrHolder = "'" + tempObjHolder.toString() + "'";
-
-                    ///...And add to the return array
+                    // add to the return array
                     returnArray[1][0] = field.getAnnotation(Column.class).name();
-                    returnArray[1][1] = tempStrHolder;
+                    returnArray[1][1] = field.get(obj);
 
 
                     // Set the private field back to inaccessible
@@ -386,9 +393,9 @@ public class PostgresQueryBuilder<T> {
 
     }
 
-    public String[][] getLoginInfoByEmail(Object obj) throws IllegalAccessException {
+    public Object[][] getLoginInfoByEmail(Object obj) throws IllegalAccessException {
 
-        String[][] returnArray = new String[3][2];
+        Object[][] returnArray = new String[3][2];
 
         // Get the objects class
         Class clazz = obj.getClass();
@@ -414,15 +421,9 @@ public class PostgresQueryBuilder<T> {
                     // Allow this script to grab the private fields
                     field.setAccessible(true);
 
-                    // ...Isolate it...
-                    Object tempObjHolder = field.get(obj);
-
-                    // ...Surround it in single quotes...
-                    String tempStrHolder = "'" + tempObjHolder.toString() + "'";
-
-                    ///...And add to the return array
+                    // Add to the return array
                     returnArray[0][0] = field.getAnnotation(Column.class).name();
-                    returnArray[0][1] = tempStrHolder;
+                    returnArray[0][1] = field.get(obj);
 
 
                     // Set the private field back to inaccessible
@@ -435,16 +436,9 @@ public class PostgresQueryBuilder<T> {
                     // Allow this script to grab the private fields
                     field.setAccessible(true);
 
-                    // ...Isolate it...
-                    Object tempObjHolder = field.get(obj);
-
-                    // ...Surround it in single quotes...
-                    String tempStrHolder = "'" + tempObjHolder.toString() + "'";
-
-                    ///...And add to the return array
+                    // Add to the return array
                     returnArray[1][0] = field.getAnnotation(Column.class).name();
-                    returnArray[1][1] = tempStrHolder;
-
+                    returnArray[1][1] = field.get(obj);
 
                     // Set the private field back to inaccessible
                     field.setAccessible(false);
@@ -456,109 +450,4 @@ public class PostgresQueryBuilder<T> {
 
     }
 
-    /**
-     *
-     * @param tableName
-     * @param queryColumns
-     * @param queryValues
-     * @return Insert query
-     */
-    private String buildInsertQueryString(String tableName, ArrayDeque<String> queryColumns, ArrayDeque<Object> queryValues) {
-
-        // Return value
-        String query = "insert into " + tableName + "(";
-
-        // These will come in handy when populating the query with our Dequeues
-        String lastQueryColumn = queryColumns.peekLast();
-        Object lastValueValue = queryValues.peekLast();
-
-        // While we still have column data in our deque...
-        while (!queryColumns.isEmpty()) {
-
-            // If it's not the last item in the deque
-            if (!queryColumns.peek().equals(lastQueryColumn)) {
-
-                // Add it to our query followed by a comma
-                query = query + queryColumns.poll() + ", ";
-
-            } else {
-
-                // If it is the last item add it to the query but close it off and start the values portion of our query
-                query = query + queryColumns.poll() + ") values(";
-            }
-
-        }
-
-        // While our arrayDeque of values is not empty...
-        while (!queryValues.isEmpty()) {
-
-            // Check if it's the last value to get
-            if (!queryValues.peek().equals(lastValueValue)) {
-
-                // ...If it isn't present just toss it in with toString and end with a comma for the next value
-                query = query + queryValues.poll().toString() + ", ";
-
-            } else {
-
-                // ...If it is just toss it in with toString and end with a ); to finish the query
-                query = query + queryValues.poll().toString() + ");";
-
-            }
-        }
-
-        return query;
-
-    }
-
-    private String buildUpdateQueryString(String tableName, Object[] pkInfo, ArrayDeque<String> queryColumns, ArrayDeque<Object> queryValues) {
-
-        // Return value
-        String query = "update " + tableName + " set ";
-
-        Object lastValueValue = queryValues.peekLast();
-
-        // While we still have column data in our deque...
-        while (!queryColumns.isEmpty()) {
-
-            if (!queryValues.peek().equals(lastValueValue)) {
-
-                query = query + queryColumns.poll() + " = " + queryValues.poll().toString() + ", ";
-
-            } else {
-
-                query = query + queryColumns.poll() + " = " + queryValues.poll().toString() + " ";
-
-            }
-
-        }
-
-        query = query + "where " + pkInfo[0] + " = " + pkInfo[1] + ";";
-
-        return query;
-
-    }
-
-    private String buildSelectAllByPK(String tableName, Object[] pkInfo) {
-
-        return "select * from " + tableName + " where " + pkInfo[0] + " = " + pkInfo[1].toString() + ";";
-
-    }
-
-    private String buildDeleteByPK(String tableName, Object[] pkInfo) {
-
-        return "delete from " + tableName + " where " + pkInfo[0] + " = " + pkInfo[1].toString() + ";";
-
-    }
-
-    private String buildLoginByUsername(String tableName, String[][] loginInfo) {
-
-        return "select " + loginInfo[0][0] + " from " + tableName + " where " + loginInfo[0][0] + " = " + loginInfo[0][1] + " and " + loginInfo[1][0] + " = " + loginInfo[1][1] + ";";
-
-    }
-
-    private String buildLoginByEmail(String tableName, String[][] loginInfo) {
-
-        return "select " + loginInfo[0][0] + " from " + tableName + " where " + loginInfo[0][0] + " = " + loginInfo[0][1] + " and " + loginInfo[1][0] + " = " + loginInfo[1][1] + ";";
-
-    }
 }
