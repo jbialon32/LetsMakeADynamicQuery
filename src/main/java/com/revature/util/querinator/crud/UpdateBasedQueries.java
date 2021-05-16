@@ -25,12 +25,12 @@ public class UpdateBasedQueries {
         // Return value
         String query = "update " + tableName + " set ";
 
-        Object lastValueValue = queryValues.peekLast();
+        Object lastColumnValue = queryColumns.peekLast();
 
         // While we still have column data in our deque...
         while (!queryColumns.isEmpty()) {
 
-            if (!queryValues.peek().equals(lastValueValue)) {
+            if (!queryColumns.peek().equals(lastColumnValue)) {
 
                 query = query + queryColumns.poll() + " = ?, ";
 
@@ -53,6 +53,8 @@ public class UpdateBasedQueries {
             paramCounter++;
 
         }
+
+        pstmt.setObject(paramCounter, pkInfo[1]);
 
         System.out.println(pstmt);
 
